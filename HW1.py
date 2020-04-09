@@ -1,7 +1,10 @@
+import sympy as sp
 import numpy as np
+from numpy import linalg as la
+import mpmath
 import math
-import matplotlib.pyplot as plt
-import sympy as sym
+from matplotlib import pyplot as plt
+import time
 
 def dn_sin(n):
 	'''
@@ -12,7 +15,22 @@ def dn_sin(n):
 	output:
 		float nth derivative of sin(0)
 	'''
-	pass
+	if n%4 == 0:
+		return sp.sin(0)
+	elif n%4 == 1:
+		return sp.cos(0)
+	elif n%4 == 2:
+		return sp.sin(0)*(-1)
+	else:
+		return sp.cos(0)*(-1)
+
+
+def fact(n):
+	f = 1
+	for i in range(1,n+1):
+		f = f * i
+	return f
+
 
 def taylor_sin(x, n):
 	'''
@@ -24,7 +42,11 @@ def taylor_sin(x, n):
 	output:
 		float value computed using the taylor series truncated at the nth term
 	'''
-	pass
+	sum_t = 0
+	for i in range(0,n+1):
+		sum_t = sum_t + (dn_sin(i)*(x**i))/fact(i)
+	return sum_t
+
 
 def measure_diff(ary1, ary2):
 	'''
@@ -36,7 +58,9 @@ def measure_diff(ary1, ary2):
 	output:
 		a float scalar quantifying difference between the arrays
 	'''
-	pass
+	a_diff = np.subtract(ary1,ary2)
+	n_diff = la.norm(a_diff)
+	return n_diff
 
 
 def escape(cx, cy, dist,itrs, x0=0, y0=0):
@@ -53,9 +77,19 @@ def escape(cx, cy, dist,itrs, x0=0, y0=0):
 		x0: initial value of x; default value 0
 		y0: initial value of y; default value 0
 	returns:
-		an int scalar interation count
+		an int scalar iteration count
 	'''
-	pass
+	z = complex(x0,y0)
+	for i in range(itrs):
+		zx = z.real
+		zy = z.imag
+		z = z*z + complex(cx,cy)
+		zx = z.real
+		zy = z.imag
+		if la.norm([zx,zy]) > dist:
+			break
+	return i
+
 
 def mandelbrot(cx,cy,dist,itrs):
 	'''
@@ -69,20 +103,62 @@ def mandelbrot(cx,cy,dist,itrs):
 	output:
 		a 2d array of iteration count for each parameter value (indexed pair of values cx, cy)
 	'''
-	pass
+	lex = len(cx)
+	ley = len(cy)
+	ary = np.zeros((lex,ley))
+	for i in range(ley):
+		for j in range(lex):
+			ary[i,j] = escape(cx[j],cy[i],2.5,256)
+	return ary
 
 if __name__ == '__main__':
 
 
 	#Problem 3
+	#compute taylor series
+	#plot taylor series
+	#`pass` prevents an error message if you run this file before inserting code
+	x = np.linspace(-5,5)
+	y = np.zeros(50)
+	for i in range(0,50):
+		y[i] = sp.sin(x[i])
+	plt.plot(x,y,linewidth = 4)
 	for n in range(2,16,2):
-		#compute taylor series
-		#plot taylor series
-		pass #`pass` prevents an error message if you run this file before inserting code
+		for j in range(0,50):
+			y[j] = taylor_sin(x[j], i)
+		plt.plot(x,y)
+	plt.legend(['sin(x)','n=2','n=4','n=6','n=8','n=10','n=12','n=14'])
+		
 
 	#Problem 4
+	x = np.linspace(0,math.pi/4)
+	y_sin = np.zeros(50)
+	y_tay = np.zeros(50)
+	for i in range(0,50):
+		y_sin[i] = sp.sin(x[i])
 	for n in range(2,16,2):
-		pass
+		for j in range(0,50):
+			y_tay[j] = taylor_sin(x[j], i)
+		d = measure_diff(y_sin,y_tay)
+		if d < 1e-2:
+			print('The truncation order needed is n = '+ str(i))
+			break
+		
 
 	#Problem 5
-
+	cx = np.linspace(-2.5,2.5,512)
+	cy = np.linspace(-2.5,2.5,512)
+	lex = len(cx)
+	ley = len(cy)
+	start = time.time()
+	bo_ary = mandelbrot(cx,cy,2.5,256)
+	end = time.time()
+	for i in range(lex):
+		for j in range(ley):
+			if bo_ary[i,j] < 255:
+				bo_ary[i,j] = 1
+			else:
+				bo_ary[i,j] = 0
+	exe = end - start
+	print('The execution time is '+ str(exe) + ' seconds')
+	plt.pcolormesh(cx,cy,bo_ary)
